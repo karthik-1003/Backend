@@ -20,9 +20,4 @@
 - Do not include last / in Connection String
 - while communicating with DB wrap the communication with try-catch or use promise and always use async await
 
-
 - app.use() is used while using middleware or while doing config settings
-
-#TODO -  read about cors. watch video 3
-
- 
