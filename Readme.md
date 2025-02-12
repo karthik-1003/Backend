@@ -21,3 +21,8 @@
 - while communicating with DB wrap the communication with try-catch or use promise and always use async await
 
 - app.use() is used while using middleware or while doing config settings
+
+#JWT
+
+- JWT is a bearer token, meaning who has the token that person is the owner.
+- JWT's private key is stored in .env, complex strings are used for private keys.
