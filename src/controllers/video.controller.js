@@ -7,7 +7,6 @@ import mongoose from "mongoose";
 
 export const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-
 });
 
 export const publishAVideo = asyncHandler(async (req, res) => {
@@ -95,4 +94,45 @@ export const getVideoById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "Video fetched Successfully"));
 });
 
-export const updateVideo = asyncHandler(async (req, res) => {});
+export const updateVideoDetails = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const user = req.user._id;
+  if (!videoId) {
+    throw new ApiError(400, "VideoId is required");
+  }
+
+  const { title, description } = req.body;
+  const thumbnailPath = req.file?.path;
+
+  if (!(title || description || thumbnailPath)) {
+    throw new ApiError(400, "There's nothing to update");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (user.toString() !== video.owner.toString()) {
+    throw new ApiError(401, "You're not authorized to update this video");
+  }
+
+  if (title) {
+    video.title = title;
+  }
+  if (description) {
+    video.description = description;
+  }
+  if (thumbnailPath) {
+    const thumbnail = await uploadOnCloudinary(thumbnailPath);
+
+    //remove existing video from cloudinary
+    video.thumbnail = thumbnail.url;
+  }
+
+  await video.save();
+  const updatedVideo = await Video.findById(videoId).select("-owner");
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedVideo, "Video details updated successfully")
+    );
+});
