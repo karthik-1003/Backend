@@ -127,8 +127,7 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
     video.thumbnail = thumbnail.url;
   }
 
-  await video.save();
-  const updatedVideo = await Video.findById(videoId).select("-owner");
+  const updatedVideo = await video.save();
 
   res
     .status(200)
