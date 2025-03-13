@@ -88,6 +88,7 @@
 - 400 -> bad request
 - 401 -> unauthorized
 - 402 -> payment required
+- 403 -> forbidden
 - 404 -> Not found
 - 500 -> Internal server error
 - 504 -> gate way time out
