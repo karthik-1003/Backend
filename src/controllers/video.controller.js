@@ -1,6 +1,9 @@
 import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteImageOnCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
@@ -123,7 +126,10 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
   if (thumbnailPath) {
     const thumbnail = await uploadOnCloudinary(thumbnailPath);
 
-    //remove existing video from cloudinary
+    if (thumbnail) {
+      await deleteImageOnCloudinary(video.thumbnail);
+    }
+
     video.thumbnail = thumbnail.url;
   }
 
