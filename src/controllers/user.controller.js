@@ -1,10 +1,14 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteImageOnCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { response } from "express";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -251,12 +255,13 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is missing");
   }
-  //TODO - delete old image from cloudinary
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
     throw new ApiError(500, "Error while uploading the avatar");
   }
+
+  const prevAvatarUrl = await User.findById(req.user._id);
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
@@ -267,6 +272,10 @@ export const updateUserAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password -refreshToken");
+
+  if (user) {
+    await deleteImageOnCloudinary(prevAvatarUrl.avatar);
+  }
 
   return res
     .status(200)
