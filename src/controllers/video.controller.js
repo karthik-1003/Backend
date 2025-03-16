@@ -2,6 +2,7 @@ import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {
   deleteImageOnCloudinary,
+  deleteVideoOnCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import { Video } from "../models/video.model.js";
@@ -85,6 +86,10 @@ export const getVideoById = asyncHandler(async (req, res) => {
     },
   ]);
 
+  if (!video.length) {
+    throw new ApiError(400, "Video is not available in the database");
+  }
+
   if (
     video.isPublished === false &&
     video.owner.toString() !== user.toString()
@@ -112,6 +117,9 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
   }
 
   const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "requested video is not available in the database");
+  }
 
   if (user.toString() !== video.owner.toString()) {
     throw new ApiError(401, "You're not authorized to update this video");
@@ -140,4 +148,33 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, updatedVideo, "Video details updated successfully")
     );
+});
+
+export const deleteVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new ApiError(400, "VideoId is required");
+  }
+  const video = await Video.findById(videoId);
+  const user = req.user._id;
+  if (!video) {
+    throw new ApiError(404, "requested video is not available in the database");
+  }
+  if (video.owner.toString() !== user.toString()) {
+    throw new ApiError(400, "You are not authorized to delete this video");
+  }
+  const isVideoDeleted = await Video.deleteOne({ _id: videoId });
+
+  if (isVideoDeleted.acknowledged) {
+    await deleteImageOnCloudinary(video.thumbnail);
+    await deleteVideoOnCloudinary(video.videoFile);
+  }
+  if (!isVideoDeleted) {
+    throw new ApiError(500, "Unable to delete Video");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse("200", "Video deleted successfully"));
 });
