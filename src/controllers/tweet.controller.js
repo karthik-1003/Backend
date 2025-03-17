@@ -81,7 +81,13 @@ export const getUserTweets = asyncHandler(async (req, res) => {
 });
 
 export const getAllTweets = asyncHandler(async (req, res) => {
-  const tweets = await Tweet.find();
+  const tweets = await Tweet.aggregate([
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+  ]);
 
   return res
     .status(200)
