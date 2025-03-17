@@ -10,7 +10,38 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 
 export const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    query = ".*",
+    sortBy = "_id",
+    sortType = "desc",
+  } = req.query;
+
+  const videos = await Video.aggregatePaginate([
+    {
+      $match: {
+        $or: [
+          { title: { $regex: query, $options: "i" } },
+          { description: { $regex: query, $options: "i" } },
+        ],
+      },
+    },
+    "__PREPAGINATE__",
+    {
+      $sort: { [sortBy]: sortType === "desc" ? -1 : 1, createdAt: -1 },
+    },
+    {
+      $skip: (page - 1) * limit,
+    },
+    {
+      $limit: limit,
+    },
+  ]);
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, videos?.docs, "videos fetched successfully"));
 });
 
 export const publishAVideo = asyncHandler(async (req, res) => {
