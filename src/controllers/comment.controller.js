@@ -63,3 +63,35 @@ export const deleteComment = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "Comment deleted successfully"));
 });
+
+export const updateComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  if (!commentId) {
+    throw new ApiError(400, "CommentId is required");
+  }
+  const { content } = req.body;
+  if (!content) {
+    throw new ApiError(400, "There's nothing to update");
+  }
+  const comment = await Comment.findById(commentId);
+
+  if (!comment) {
+    throw new ApiError(400, "There's no comment with the given Id");
+  }
+  const user = req.user._id;
+  if (comment.owner.toString() !== user.toString()) {
+    throw new ApiError(400, "You're not authorized to update this comment");
+  }
+
+  comment.content = content;
+
+  const updatedComment = await comment.save();
+
+  if (!updatedComment) {
+    throw new ApiError(500, "cannot update comment at this moment");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, updatedComment, "Comment updated Successfully"));
+});
