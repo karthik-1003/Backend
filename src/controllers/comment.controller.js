@@ -95,3 +95,57 @@ export const updateComment = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, updatedComment, "Comment updated Successfully"));
 });
+
+export const getAllComments = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const { page = 1, limit = 50 } = req.query;
+  if (!videoId) {
+    throw new ApiError(400, "VideoId is required");
+  }
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(400, "There's video with the given Id");
+  }
+
+  const comments = await Comment.aggregate([
+    {
+      $match: {
+        video: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              _id: 0,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        owner: { $first: "$owner.username" },
+      },
+    },
+    {
+      $skip: (page - 1) * limit,
+    },
+    {
+      $limit: limit,
+    },
+    {
+      $sort: { updatedAt: -1 },
+    },
+  ]);
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, comments, "Comments fetched successfully"));
+});
