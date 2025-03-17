@@ -4,17 +4,15 @@ import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { isValidId } from "../utils/validateId.js";
 
 export const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { content } = req.body;
   const user = req.user._id;
 
-  if (!videoId) {
-    throw new ApiError(
-      400,
-      "VideoId is required for adding comment to a video"
-    );
+  if (!videoId || !isValidId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
   }
   if (!content) {
     throw new ApiError(400, "There's no comment to add");
@@ -43,8 +41,8 @@ export const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const user = req.user._id;
 
-  if (!commentId) {
-    throw new ApiError(400, "CommentId is required");
+  if (!commentId || !isValidId(commentId)) {
+    throw new ApiError(400, "Invalid commentId");
   }
   const comment = await Comment.findById(commentId);
   if (!comment) {
@@ -66,8 +64,8 @@ export const deleteComment = asyncHandler(async (req, res) => {
 
 export const updateComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  if (!commentId) {
-    throw new ApiError(400, "CommentId is required");
+  if (!commentId || !isValidId(commentId)) {
+    throw new ApiError(400, "Invalid commentId");
   }
   const { content } = req.body;
   if (!content) {
@@ -99,8 +97,8 @@ export const updateComment = asyncHandler(async (req, res) => {
 export const getAllComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { page = 1, limit = 50 } = req.query;
-  if (!videoId) {
-    throw new ApiError(400, "VideoId is required");
+  if (!videoId || !isValidId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
   }
   const video = await Video.findById(videoId);
   if (!video) {

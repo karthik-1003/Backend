@@ -2,6 +2,7 @@ import { Tweet } from "../models/tweet.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { isValidId } from "../utils/validateId.js";
 
 export const addTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -21,8 +22,8 @@ export const addTweet = asyncHandler(async (req, res) => {
 
 export const deleteTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
-  if (!tweetId) {
-    throw new ApiError(400, "Tweet id is required");
+  if (!tweetId || !isValidId(tweetId)) {
+    throw new ApiError(400, "Invalid tweetId");
   }
 
   const tweet = await Tweet.findByIdAndDelete(tweetId);

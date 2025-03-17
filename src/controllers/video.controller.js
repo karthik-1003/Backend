@@ -8,6 +8,7 @@ import {
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
+import { isValidId } from "../utils/validateId.js";
 
 export const getAllVideos = asyncHandler(async (req, res) => {
   const {
@@ -81,8 +82,8 @@ export const publishAVideo = asyncHandler(async (req, res) => {
 export const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
-  if (!videoId) {
-    throw new ApiError(400, "videoId is required");
+  if (!videoId || !isValidId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
   }
 
   const video = await Video.aggregate([
@@ -136,8 +137,8 @@ export const getVideoById = asyncHandler(async (req, res) => {
 export const updateVideoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
-  if (!videoId) {
-    throw new ApiError(400, "VideoId is required");
+  if (!videoId || !isValidId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
   }
 
   const { title, description } = req.body;
@@ -184,8 +185,8 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
 export const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  if (!videoId) {
-    throw new ApiError(400, "VideoId is required");
+  if (!videoId || !isValidId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
   }
   const video = await Video.findById(videoId);
   const user = req.user._id;
@@ -212,8 +213,8 @@ export const deleteVideo = asyncHandler(async (req, res) => {
 
 export const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId) {
-    throw new ApiError(400, "VideoId is required");
+  if (!videoId || !isValidId(videoId)) {
+    throw new ApiError(400, "Invalid videoId");
   }
 
   const video = await Video.findById(videoId);
