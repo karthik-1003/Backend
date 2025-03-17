@@ -38,3 +38,28 @@ export const addComment = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, comment, "comment added successfully"));
 });
+
+export const deleteComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const user = req.user._id;
+
+  if (!commentId) {
+    throw new ApiError(400, "CommentId is required");
+  }
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(400, "There's no comment with given Id");
+  }
+  if (comment.owner.toString() !== user.toString()) {
+    throw new ApiError(400, "You're not authourised to delete this comment");
+  }
+
+  const isCommentDeleted = await Comment.deleteOne({ _id: commentId });
+  if (!isCommentDeleted.acknowledged) {
+    throw new ApiError(500, "Comment cannot be deleted at this moment");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Comment deleted successfully"));
+});
