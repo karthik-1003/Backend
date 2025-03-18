@@ -105,12 +105,13 @@ export const getAllComments = asyncHandler(async (req, res) => {
     throw new ApiError(400, "There's video with the given Id");
   }
 
-  const comments = await Comment.aggregate([
+  const comments = await Comment.aggregatePaginate([
     {
       $match: {
         video: new mongoose.Types.ObjectId(videoId),
       },
     },
+    "__PREPAGINATE__",
     {
       $lookup: {
         from: "users",
@@ -145,5 +146,5 @@ export const getAllComments = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, comments, "Comments fetched successfully"));
+    .json(new ApiResponse(200, comments.docs, "Comments fetched successfully"));
 });

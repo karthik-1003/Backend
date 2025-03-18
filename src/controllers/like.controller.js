@@ -115,13 +115,15 @@ export const getVideoLikes = asyncHandler(async (req, res) => {
 
 export const getUserLikedVideos = asyncHandler(async (req, res) => {
   const user = req.user._id;
-  const likedVideos = await Like.aggregate([
+  const { page = 1, limit = 10 } = req.query;
+  const likedVideos = await Like.aggregatePaginate([
     {
       $match: {
         likedBy: user,
         video: { $exists: true },
       },
     },
+    "__PREPAGINATE__",
     {
       $lookup: {
         from: "videos",
@@ -143,9 +145,22 @@ export const getUserLikedVideos = asyncHandler(async (req, res) => {
         _id: 0,
       },
     },
+    {
+      $skip: (page - 1) * limit,
+    },
+    {
+      $limit: limit,
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
   ]);
 
-  const userLikedVideos = likedVideos.map((likedvideo) => likedvideo.video);
+  const userLikedVideos = likedVideos.docs.map(
+    (likedvideo) => likedvideo.video
+  );
 
   return res
     .status(200)

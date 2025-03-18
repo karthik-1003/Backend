@@ -42,7 +42,7 @@ export const getAllVideos = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, videos?.docs, "videos fetched successfully"));
+    .json(new ApiResponse(200, videos.docs, "videos fetched successfully"));
 });
 
 export const publishAVideo = asyncHandler(async (req, res) => {
