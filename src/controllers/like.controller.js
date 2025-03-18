@@ -5,18 +5,20 @@ import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { isValidId } from "../utils/validateId.js";
+import { checkForEmptyResult, isValidId } from "../utils/validateId.js";
 
 export const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
 
   const video = await Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(400, "There's no video with given Id");
-  }
+  checkForEmptyResult(video, "video");
+  // if (!video) {
+  //   throw new ApiError(400, "There's no video with given Id");
+  // }
 
   const existingLike = await Like.findOne({
     video: videoId,
@@ -38,13 +40,15 @@ export const toggleVideoLike = asyncHandler(async (req, res) => {
 
 export const toggleCommentLike = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  if (!commentId || !isValidId(commentId)) {
-    throw new ApiError(400, "Invalid commentId");
-  }
+  isValidId(commentId, "commentId");
+  // if (!commentId || !isValidId(commentId)) {
+  //   throw new ApiError(400, "Invalid commentId");
+  // }
   const comment = await Comment.findById(commentId);
-  if (!comment) {
-    throw new ApiError(400, "There's no comment with given ID");
-  }
+  checkForEmptyResult(comment, "comment");
+  // if (!comment) {
+  //   throw new ApiError(400, "There's no comment with given ID");
+  // }
   const existingLike = await Like.findOne({
     comment: commentId,
     likedBy: req.user._id,
@@ -66,13 +70,15 @@ export const toggleCommentLike = asyncHandler(async (req, res) => {
 
 export const toggleTweetLike = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
-  if (!tweetId || !isValidId(tweetId)) {
-    throw new ApiError(400, "Invalid tweetId");
-  }
+  isValidId(tweetId, "tweetId");
+  // if (!tweetId || !isValidId(tweetId)) {
+  //   throw new ApiError(400, "Invalid tweetId");
+  // }
   const tweet = await Tweet.findById(tweetId);
-  if (!tweet) {
-    throw new ApiError(400, "There's no tweet with given Id");
-  }
+  checkForEmptyResult(tweet, "tweet");
+  // if (!tweet) {
+  //   throw new ApiError(400, "There's no tweet with given Id");
+  // }
   const existingLike = await Like.findOne({
     tweet: tweetId,
     likedBy: req.user._id,
@@ -93,13 +99,15 @@ export const toggleTweetLike = asyncHandler(async (req, res) => {
 
 export const getVideoLikes = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
   const video = await Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(400, "There's no video with given Id");
-  }
+  checkForEmptyResult(video, "video");
+  // if (!video) {
+  //   throw new ApiError(400, "There's no video with given Id");
+  // }
   const videoLikes = (await Like.find({ video: videoId })).length;
 
   return res

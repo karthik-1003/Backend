@@ -9,6 +9,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { response } from "express";
+import { checkForServerError } from "../utils/validateId.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -71,9 +72,10 @@ export const registerUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  if (!createdUser) {
-    throw new ApiError(500, "Something went wrong while registering the user");
-  }
+  checkForServerError(createdUser, "user registration");
+  // if (!createdUser) {
+  //   throw new ApiError(500, "Something went wrong while registering the user");
+  // }
 
   return res
     .status(201)

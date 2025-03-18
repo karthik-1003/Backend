@@ -4,58 +4,74 @@ import { ApiError } from "../utils/apiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { isValidId } from "../utils/validateId.js";
+import {
+  authorizationError,
+  checkForEmptyResult,
+  checkForServerError,
+  isValidId,
+} from "../utils/validateId.js";
 
 export const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { content } = req.body;
   const user = req.user._id;
 
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
+
   if (!content) {
     throw new ApiError(400, "There's no comment to add");
   }
   const isValidVideoId = await Video.findById(videoId);
 
-  if (!isValidVideoId) {
-    throw new ApiError(400, "There's no video with the given Id");
-  }
+  checkForEmptyResult(isValidVideoId, "video");
+
+  // if (!isValidVideoId) {
+  //   throw new ApiError(400, "There's no video with the given Id");
+  // }
   const comment = await Comment.create({
     content,
     video: videoId,
     owner: user,
   });
 
-  if (!comment) {
-    throw new ApiError(500, "Not able add comment at this moment");
-  }
+  checkForServerError(comment, "add comment");
+
+  // if (!comment) {
+  //   throw new ApiError(500, "Not able add comment at this moment");
+  // }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, comment, "comment added successfully"));
+    .json(new ApiResponse(201, comment, "comment added successfully"));
 });
 
 export const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
   const user = req.user._id;
 
-  if (!commentId || !isValidId(commentId)) {
-    throw new ApiError(400, "Invalid commentId");
-  }
+  isValidId(commentId, "commentId");
+  // if (!commentId || !isValidId(commentId)) {
+  //   throw new ApiError(400, "Invalid commentId");
+  // }
   const comment = await Comment.findById(commentId);
-  if (!comment) {
-    throw new ApiError(400, "There's no comment with given Id");
-  }
+  checkForEmptyResult(comment, "comment");
+  // if (!comment) {
+  //   throw new ApiError(400, "There's no comment with given Id");
+  // }
+
   if (comment.owner.toString() !== user.toString()) {
-    throw new ApiError(400, "You're not authourised to delete this comment");
+    authorizationError();
   }
 
   const isCommentDeleted = await Comment.deleteOne({ _id: commentId });
-  if (!isCommentDeleted.acknowledged) {
-    throw new ApiError(500, "Comment cannot be deleted at this moment");
-  }
+  checkForServerError(isCommentDeleted.acknowledged, "delete comment");
+  // if (!isCommentDeleted.acknowledged) {
+  //   throw new ApiError(500, "Comment cannot be deleted at this moment");
+  // }
 
   return res
     .status(200)
@@ -64,30 +80,36 @@ export const deleteComment = asyncHandler(async (req, res) => {
 
 export const updateComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  if (!commentId || !isValidId(commentId)) {
-    throw new ApiError(400, "Invalid commentId");
-  }
+
+  isValidId(commentId, "commentId");
+  // if (!commentId || !isValidId(commentId)) {
+  //   throw new ApiError(400, "Invalid commentId");
+  // }
   const { content } = req.body;
   if (!content) {
     throw new ApiError(400, "There's nothing to update");
   }
   const comment = await Comment.findById(commentId);
 
-  if (!comment) {
-    throw new ApiError(400, "There's no comment with the given Id");
-  }
+  checkForEmptyResult(comment, "comment");
+
+  // if (!comment) {
+  //   throw new ApiError(400, "There's no comment with the given Id");
+  // }
   const user = req.user._id;
   if (comment.owner.toString() !== user.toString()) {
-    throw new ApiError(400, "You're not authorized to update this comment");
+    authorizationError();
   }
 
   comment.content = content;
 
   const updatedComment = await comment.save();
 
-  if (!updatedComment) {
-    throw new ApiError(500, "cannot update comment at this moment");
-  }
+  checkForServerError(updateComment, "update comment");
+
+  // if (!updatedComment) {
+  //   throw new ApiError(500, "cannot update comment at this moment");
+  // }
 
   res
     .status(200)
@@ -97,13 +119,15 @@ export const updateComment = asyncHandler(async (req, res) => {
 export const getAllComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const { page = 1, limit = 50 } = req.query;
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
   const video = await Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(400, "There's video with the given Id");
-  }
+  checkForEmptyResult(video, "video");
+  // if (!video) {
+  //   throw new ApiError(400, "There's video with the given Id");
+  // }
 
   const comments = await Comment.aggregatePaginate([
     {

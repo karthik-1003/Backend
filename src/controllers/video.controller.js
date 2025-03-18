@@ -8,7 +8,12 @@ import {
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-import { isValidId } from "../utils/validateId.js";
+import {
+  authorizationError,
+  checkForEmptyResult,
+  checkForServerError,
+  isValidId,
+} from "../utils/validateId.js";
 
 export const getAllVideos = asyncHandler(async (req, res) => {
   const {
@@ -57,9 +62,12 @@ export const publishAVideo = asyncHandler(async (req, res) => {
   const videoFile = await uploadOnCloudinary(videoFilePath);
   const thumbnail = await uploadOnCloudinary(thumbnailPath);
 
-  if (!videoFile || !thumbnail) {
-    throw new ApiError(500, "Error while uploading videofiles");
-  }
+  // if (!videoFile || !thumbnail) {
+  //   throw new ApiError(500, "Error while uploading videofiles");
+  // }
+
+  checkForServerError(videoFile, "upload video");
+  checkForServerError(thumbnail, "upload thumbnail");
 
   const video = await Video.create({
     videoFile: videoFile.url,
@@ -70,9 +78,10 @@ export const publishAVideo = asyncHandler(async (req, res) => {
     owner: req.user._id,
   });
 
-  if (!video) {
-    throw new ApiError(500, "Unable to upload video");
-  }
+  // if (!video) {
+  //   throw new ApiError(500, "Unable to upload video");
+  // }
+  checkForServerError(video, "create video");
 
   return res
     .status(201)
@@ -82,9 +91,10 @@ export const publishAVideo = asyncHandler(async (req, res) => {
 export const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
 
   const video = await Video.aggregate([
     {
@@ -137,9 +147,10 @@ export const getVideoById = asyncHandler(async (req, res) => {
 export const updateVideoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
 
   const { title, description } = req.body;
   const thumbnailPath = req.file?.path;
@@ -149,12 +160,14 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
   }
 
   const video = await Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(404, "requested video is not available in the database");
-  }
+  checkForEmptyResult(video, "video");
+  // if (!video) {
+  //   throw new ApiError(404, "requested video is not available in the database");
+  // }
 
   if (user.toString() !== video.owner.toString()) {
-    throw new ApiError(401, "You're not authorized to update this video");
+    // throw new ApiError(401, "You're not authorized to update this video");
+    authorizationError();
   }
 
   if (title) {
@@ -174,6 +187,7 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
   }
 
   const updatedVideo = await video.save();
+  checkForServerError(updatedVideo, "update video details");
 
   res
     .status(200)
@@ -184,17 +198,20 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
 
 export const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  isValidId(videoId, "videoId");
 
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
   const video = await Video.findById(videoId);
   const user = req.user._id;
-  if (!video) {
-    throw new ApiError(404, "requested video is not available in the database");
-  }
+  checkForEmptyResult(video, "video");
+  // if (!video) {
+  //   throw new ApiError(404, "requested video is not available in the database");
+  // }
   if (video.owner.toString() !== user.toString()) {
-    throw new ApiError(400, "You are not authorized to delete this video");
+    // throw new ApiError(400, "You are not authorized to delete this video");
+    authorizationError();
   }
   const isVideoDeleted = await Video.deleteOne({ _id: videoId });
 
@@ -202,10 +219,10 @@ export const deleteVideo = asyncHandler(async (req, res) => {
     await deleteImageOnCloudinary(video.thumbnail);
     await deleteVideoOnCloudinary(video.videoFile);
   }
-  if (!isVideoDeleted) {
-    throw new ApiError(500, "Unable to delete Video");
-  }
-
+  // if (!isVideoDeleted) {
+  //   throw new ApiError(500, "Unable to delete Video");
+  // }
+  checkForServerError(isVideoDeleted.acknowledged, "delete video");
   return res
     .status(200)
     .json(new ApiResponse("200", {}, "Video deleted successfully"));
@@ -213,24 +230,28 @@ export const deleteVideo = asyncHandler(async (req, res) => {
 
 export const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId || !isValidId(videoId)) {
-    throw new ApiError(400, "Invalid videoId");
-  }
+  isValidId(videoId, "videoId");
+  // if (!videoId || !isValidId(videoId)) {
+  //   throw new ApiError(400, "Invalid videoId");
+  // }
 
   const video = await Video.findById(videoId);
-  if (!video) {
-    throw new ApiError(404, "There is no video with given Id");
-  }
+  checkForEmptyResult(video, "video");
+  // if (!video) {
+  //   throw new ApiError(404, "There is no video with given Id");
+  // }
   const user = req.user._id;
   if (video.owner.toString() !== user.toString()) {
-    throw new ApiError(
-      400,
-      "You are not authorized to change the status of this video"
-    );
+    // throw new ApiError(
+    //   400,
+    //   "You are not authorized to change the status of this video"
+    // );
+    authorizationError();
   }
 
   video.isPublished = !video.isPublished;
-  await video.save();
+  const updatedVideo = await video.save();
+  checkForServerError(updatedVideo, "toggle publish status");
 
   return res
     .status(200)
