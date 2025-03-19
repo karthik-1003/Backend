@@ -18,26 +18,15 @@ export const addTweet = asyncHandler(async (req, res) => {
   const tweet = await Tweet.create({ content, owner: req.user._id });
   checkForServerError(tweet, "create tweet");
 
-  // if (!tweet) {
-  //   throw new ApiError(500, "Not able to add this tweet at this moment");
-  // }
-
   res.status(201).json(new ApiResponse(200, tweet, "Tweet added successfully"));
 });
 
 export const deleteTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
   isValidId(tweetId, "tweetId");
-  // if (!tweetId || !isValidId(tweetId)) {
-  //   throw new ApiError(400, "Invalid tweetId");
-  // }
 
   const tweet = await Tweet.findByIdAndDelete(tweetId);
   checkForEmptyResult(tweet, "tweet");
-
-  // if (!tweet) {
-  //   throw new ApiError(400, "There is no tweet with the given id");
-  // }
 
   return res
     .status(200)
@@ -49,17 +38,13 @@ export const updateTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
 
   isValidId(tweetId, "tweetId");
-  // if (!tweetId || !isValidId(tweetId)) {
-  //   throw new ApiError(400, "Invalid tweetId");
-  // }
+
   if (!content) {
     throw new ApiError(400, "content is required");
   }
   const tweet = await Tweet.findById(tweetId);
   checkForEmptyResult(tweet, "tweet");
-  // if (!tweet) {
-  //   throw new ApiError(400, "There's is no tweet with given Id");
-  // }
+
   tweet.content = content;
   const updatedTweet = await tweet.save();
   checkForServerError(updatedTweet, "update tweet");

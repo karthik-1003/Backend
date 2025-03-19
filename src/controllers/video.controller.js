@@ -62,10 +62,6 @@ export const publishAVideo = asyncHandler(async (req, res) => {
   const videoFile = await uploadOnCloudinary(videoFilePath);
   const thumbnail = await uploadOnCloudinary(thumbnailPath);
 
-  // if (!videoFile || !thumbnail) {
-  //   throw new ApiError(500, "Error while uploading videofiles");
-  // }
-
   checkForServerError(videoFile, "upload video");
   checkForServerError(thumbnail, "upload thumbnail");
 
@@ -78,9 +74,6 @@ export const publishAVideo = asyncHandler(async (req, res) => {
     owner: req.user._id,
   });
 
-  // if (!video) {
-  //   throw new ApiError(500, "Unable to upload video");
-  // }
   checkForServerError(video, "create video");
 
   return res
@@ -92,9 +85,6 @@ export const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
   isValidId(videoId, "videoId");
-  // if (!videoId || !isValidId(videoId)) {
-  //   throw new ApiError(400, "Invalid videoId");
-  // }
 
   const video = await Video.aggregate([
     {
@@ -148,9 +138,6 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   const user = req.user._id;
   isValidId(videoId, "videoId");
-  // if (!videoId || !isValidId(videoId)) {
-  //   throw new ApiError(400, "Invalid videoId");
-  // }
 
   const { title, description } = req.body;
   const thumbnailPath = req.file?.path;
@@ -161,12 +148,8 @@ export const updateVideoDetails = asyncHandler(async (req, res) => {
 
   const video = await Video.findById(videoId);
   checkForEmptyResult(video, "video");
-  // if (!video) {
-  //   throw new ApiError(404, "requested video is not available in the database");
-  // }
 
   if (user.toString() !== video.owner.toString()) {
-    // throw new ApiError(401, "You're not authorized to update this video");
     authorizationError();
   }
 
@@ -200,17 +183,11 @@ export const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   isValidId(videoId, "videoId");
 
-  // if (!videoId || !isValidId(videoId)) {
-  //   throw new ApiError(400, "Invalid videoId");
-  // }
   const video = await Video.findById(videoId);
   const user = req.user._id;
   checkForEmptyResult(video, "video");
-  // if (!video) {
-  //   throw new ApiError(404, "requested video is not available in the database");
-  // }
+
   if (video.owner.toString() !== user.toString()) {
-    // throw new ApiError(400, "You are not authorized to delete this video");
     authorizationError();
   }
   const isVideoDeleted = await Video.deleteOne({ _id: videoId });
@@ -219,9 +196,7 @@ export const deleteVideo = asyncHandler(async (req, res) => {
     await deleteImageOnCloudinary(video.thumbnail);
     await deleteVideoOnCloudinary(video.videoFile);
   }
-  // if (!isVideoDeleted) {
-  //   throw new ApiError(500, "Unable to delete Video");
-  // }
+
   checkForServerError(isVideoDeleted.acknowledged, "delete video");
   return res
     .status(200)
@@ -231,21 +206,12 @@ export const deleteVideo = asyncHandler(async (req, res) => {
 export const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   isValidId(videoId, "videoId");
-  // if (!videoId || !isValidId(videoId)) {
-  //   throw new ApiError(400, "Invalid videoId");
-  // }
 
   const video = await Video.findById(videoId);
   checkForEmptyResult(video, "video");
-  // if (!video) {
-  //   throw new ApiError(404, "There is no video with given Id");
-  // }
+
   const user = req.user._id;
   if (video.owner.toString() !== user.toString()) {
-    // throw new ApiError(
-    //   400,
-    //   "You are not authorized to change the status of this video"
-    // );
     authorizationError();
   }
 

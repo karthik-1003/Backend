@@ -73,9 +73,6 @@ export const registerUser = asyncHandler(async (req, res) => {
   );
 
   checkForServerError(createdUser, "user registration");
-  // if (!createdUser) {
-  //   throw new ApiError(500, "Something went wrong while registering the user");
-  // }
 
   return res
     .status(201)
@@ -98,8 +95,6 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
-
-  //remove await and check isPasswordValid
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
@@ -369,8 +364,6 @@ export const getUserChannelProfile = asyncHandler(async (req, res) => {
       },
     },
   ]);
-
-  // check by logging channel
 
   if (!channel?.length) {
     throw new ApiError(404, "Channel does not exist");
