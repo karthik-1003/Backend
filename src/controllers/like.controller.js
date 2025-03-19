@@ -106,47 +106,45 @@ export const getVideoLikes = asyncHandler(async (req, res) => {
 export const getUserLikedVideos = asyncHandler(async (req, res) => {
   const user = req.user._id;
   const { page = 1, limit = 10 } = req.query;
-  const likedVideos = await Like.aggregatePaginate([
-    {
-      $match: {
-        likedBy: user,
-        video: { $exists: true },
-      },
-    },
-    "__PREPAGINATE__",
-    {
-      $lookup: {
-        from: "videos",
-        localField: "video",
-        foreignField: "_id",
-        as: "video",
-      },
-    },
-    {
-      $addFields: {
-        video: {
-          $first: "$video",
+  const options = { page, limit };
+  const likedVideos = await Like.aggregatePaginate(
+    [
+      {
+        $match: {
+          likedBy: user,
+          video: { $exists: true },
         },
       },
-    },
-    {
-      $project: {
-        video: 1,
-        _id: 0,
+      "__PREPAGINATE__",
+      {
+        $lookup: {
+          from: "videos",
+          localField: "video",
+          foreignField: "_id",
+          as: "video",
+        },
       },
-    },
-    {
-      $skip: (page - 1) * limit,
-    },
-    {
-      $limit: limit,
-    },
-    {
-      $sort: {
-        createdAt: -1,
+      {
+        $addFields: {
+          video: {
+            $first: "$video",
+          },
+        },
       },
-    },
-  ]);
+      {
+        $project: {
+          video: 1,
+          _id: 0,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ],
+    options
+  );
 
   const userLikedVideos = likedVideos.docs.map(
     (likedvideo) => likedvideo.video

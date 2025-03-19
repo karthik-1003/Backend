@@ -31,29 +31,27 @@ export const createPlaylist = asyncHandler(async (req, res) => {
 export const getUserPlaylists = asyncHandler(async (req, res) => {
   const user = req.user._id;
   const { page = 1, limit = 10 } = req.query;
+  const options = { page, limit };
 
-  const userPlaylists = await Playlist.aggregatePaginate([
-    {
-      $match: {
-        owner: user,
+  const userPlaylists = await Playlist.aggregatePaginate(
+    [
+      {
+        $match: {
+          owner: user,
+        },
       },
-    },
-    "__PREPAGINATE__",
-    {
-      $lookup: {
-        from: "videos",
-        localField: "videos",
-        foreignField: "_id",
-        as: "videos",
+      "__PREPAGINATE__",
+      {
+        $lookup: {
+          from: "videos",
+          localField: "videos",
+          foreignField: "_id",
+          as: "videos",
+        },
       },
-    },
-    {
-      $skip: (page - 1) * limit,
-    },
-    {
-      $limit: limit,
-    },
-  ]);
+    ],
+    options
+  );
   checkForEmptyResult(userPlaylists.docs.length, "playlist");
 
   return res
@@ -134,33 +132,32 @@ export const getPlaylistById = asyncHandler(async (req, res) => {
 
   isValidId(playlistId, "playlistId");
 
-  const playlist = await Playlist.aggregatePaginate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(playlistId),
+  const options = { page, limit };
+
+  const playlist = await Playlist.aggregatePaginate(
+    [
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(playlistId),
+        },
       },
-    },
-    "__PREPAGINATE__",
-    {
-      $lookup: {
-        from: "videos",
-        localField: "videos",
-        foreignField: "_id",
-        as: "videos",
+      "__PREPAGINATE__",
+      {
+        $lookup: {
+          from: "videos",
+          localField: "videos",
+          foreignField: "_id",
+          as: "videos",
+        },
       },
-    },
-    {
-      $sort: {
-        createdAt: -1,
+      {
+        $sort: {
+          createdAt: -1,
+        },
       },
-    },
-    {
-      $skip: (page - 1) * limit,
-    },
-    {
-      $limit: limit,
-    },
-  ]);
+    ],
+    options
+  );
 
   checkForEmptyResult(playlist.docs.length, "playlist");
   return res

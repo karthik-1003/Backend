@@ -24,26 +24,26 @@ export const getAllVideos = asyncHandler(async (req, res) => {
     sortType = "desc",
   } = req.query;
 
-  const videos = await Video.aggregatePaginate([
-    {
-      $match: {
-        $or: [
-          { title: { $regex: query, $options: "i" } },
-          { description: { $regex: query, $options: "i" } },
-        ],
+  const options = { page, limit };
+
+  const videos = await Video.aggregatePaginate(
+    [
+      {
+        $match: {
+          isPublished: true,
+          $or: [
+            { title: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } },
+          ],
+        },
       },
-    },
-    "__PREPAGINATE__",
-    {
-      $sort: { [sortBy]: sortType === "desc" ? -1 : 1, createdAt: -1 },
-    },
-    {
-      $skip: (page - 1) * limit,
-    },
-    {
-      $limit: limit,
-    },
-  ]);
+      "__PREPAGINATE__",
+      {
+        $sort: { [sortBy]: sortType === "desc" ? -1 : 1, createdAt: -1 },
+      },
+    ],
+    options
+  );
 
   res
     .status(200)
@@ -90,6 +90,7 @@ export const getVideoById = asyncHandler(async (req, res) => {
     {
       $match: {
         _id: new mongoose.Types.ObjectId(videoId),
+        owner: user,
       },
     },
     {
@@ -119,7 +120,10 @@ export const getVideoById = asyncHandler(async (req, res) => {
   ]);
 
   if (!video.length) {
-    throw new ApiError(400, "Video is not available in the database");
+    throw new ApiError(
+      400,
+      "Video is not available in the database or video is private"
+    );
   }
 
   if (

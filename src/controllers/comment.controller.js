@@ -97,44 +97,43 @@ export const getAllComments = asyncHandler(async (req, res) => {
   const video = await Video.findById(videoId);
   checkForEmptyResult(video, "video");
 
-  const comments = await Comment.aggregatePaginate([
-    {
-      $match: {
-        video: new mongoose.Types.ObjectId(videoId),
+  const options = { page, limit };
+
+  const comments = await Comment.aggregatePaginate(
+    [
+      {
+        $match: {
+          video: new mongoose.Types.ObjectId(videoId),
+        },
       },
-    },
-    "__PREPAGINATE__",
-    {
-      $lookup: {
-        from: "users",
-        localField: "owner",
-        foreignField: "_id",
-        as: "owner",
-        pipeline: [
-          {
-            $project: {
-              username: 1,
-              _id: 0,
+      "__PREPAGINATE__",
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+          pipeline: [
+            {
+              $project: {
+                username: 1,
+                _id: 0,
+              },
             },
-          },
-        ],
+          ],
+        },
       },
-    },
-    {
-      $addFields: {
-        owner: { $first: "$owner.username" },
+      {
+        $addFields: {
+          owner: { $first: "$owner.username" },
+        },
       },
-    },
-    {
-      $skip: (page - 1) * limit,
-    },
-    {
-      $limit: limit,
-    },
-    {
-      $sort: { updatedAt: -1 },
-    },
-  ]);
+      {
+        $sort: { updatedAt: -1 },
+      },
+    ],
+    options
+  );
 
   res
     .status(200)
